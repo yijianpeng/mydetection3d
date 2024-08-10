@@ -13,7 +13,7 @@ git add 文件名
 ```
 ### git添加评论
 ```bash
-git commit -m "Added a new folder and files to the main branch"
+git commit -m "A"
 ```
 ### git提交代码到远程仓库
 ```bash

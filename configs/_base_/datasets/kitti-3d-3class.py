@@ -1,4 +1,5 @@
 # dataset settings
+# 数据集设置
 dataset_type = 'KittiDataset'
 data_root = 'data/kitti/'
 class_names = ['Pedestrian', 'Cyclist', 'Car']
@@ -21,6 +22,7 @@ metainfo = dict(classes=class_names)
 #      }))
 backend_args = None
 
+# kitti_dbinfos_train.pkl标注文件的读取
 db_sampler = dict(
     data_root=data_root,
     info_path=data_root + 'kitti_dbinfos_train.pkl',
@@ -39,28 +41,39 @@ db_sampler = dict(
     backend_args=backend_args)
 
 train_pipeline = [
+    # 从文件中加载点云数据
     dict(
         type='LoadPointsFromFile',
         coord_type='LIDAR',
         load_dim=4,  # x, y, z, intensity
         use_dim=4,
         backend_args=backend_args),
+    # 加载标注数据
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
+    # 读取标注文件，也就是kitti_dbinfos_train.pkl
     dict(type='ObjectSample', db_sampler=db_sampler),
+    #点云数据增强
+    # 1.0 ObjectNoise增加噪声
     dict(
         type='ObjectNoise',
         num_try=100,
         translation_std=[1.0, 1.0, 0.5],
         global_rot_range=[0.0, 0.0],
         rot_range=[-0.78539816, 0.78539816]),
+    # 2.0 ObjectRangeNoise随机扰动
     dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
+    # 3.0 GlobalRotScaleTrans全局旋转和缩放
     dict(
         type='GlobalRotScaleTrans',
         rot_range=[-0.78539816, 0.78539816],
         scale_ratio_range=[0.95, 1.05]),
+    # 4.0 PointsRangeFilter过滤点云范围
     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
+    # 5.0 ObjectRangeFilter过滤物体范围
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
+    # 6.0 PointShuffle点云数据打乱
     dict(type='PointShuffle'),
+    # 7.0 Pack3DDetInputs打包3D检测输入
     dict(
         type='Pack3DDetInputs',
         keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])

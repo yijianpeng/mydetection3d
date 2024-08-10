@@ -1,7 +1,8 @@
 voxel_size = [0.16, 0.16, 4]
-
+#这里定义了一个字典，包含了模型的所有参数，包括数据预处理、网络结构、训练和测试的配置等
 model = dict(
     type='VoxelNet',
+    # Det3DDataPreprocessor 功能：体素化
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
         voxel=True,
@@ -10,6 +11,7 @@ model = dict(
             point_cloud_range=[0, -39.68, -3, 69.12, 39.68, 1],
             voxel_size=voxel_size,
             max_voxels=(16000, 40000))),
+    # VoxelFeatureExtractor 功能：提取体素特征
     voxel_encoder=dict(
         type='PillarFeatureNet',
         in_channels=4,
@@ -17,19 +19,23 @@ model = dict(
         with_distance=False,
         voxel_size=voxel_size,
         point_cloud_range=[0, -39.68, -3, 69.12, 39.68, 1]),
+    # MiddleEncoder 功能：将体素特征转换为形成伪图形
     middle_encoder=dict(
         type='PointPillarsScatter', in_channels=64, output_shape=[496, 432]),
+    # SECOND Backbone 功能：2DBackbone 提取特征
     backbone=dict(
         type='SECOND',
         in_channels=64,
         layer_nums=[3, 5, 5],
         layer_strides=[2, 2, 2],
         out_channels=[64, 128, 256]),
+    # SECONDFPN 功能：FPN结构，进行多尺度融合特征
     neck=dict(
         type='SECONDFPN',
         in_channels=[64, 128, 256],
         upsample_strides=[1, 2, 4],
         out_channels=[128, 128, 128]),
+    # Anchor3DHead 功能：预测头，预测目标的位置和类别
     bbox_head=dict(
         type='Anchor3DHead',
         num_classes=3,
@@ -50,19 +56,20 @@ model = dict(
         diff_rad_by_sin=True,
         bbox_coder=dict(type='DeltaXYZWLHRBBoxCoder'),
         loss_cls=dict(
-            type='mmdet.FocalLoss',
+            type='mmdet.FocalLoss',  # 分类的预测使用的是FocalLoss
             use_sigmoid=True,
             gamma=2.0,
             alpha=0.25,
             loss_weight=1.0),
         loss_bbox=dict(
-            type='mmdet.SmoothL1Loss', beta=1.0 / 9.0, loss_weight=2.0),
+            type='mmdet.SmoothL1Loss', beta=1.0 / 9.0, loss_weight=2.0), #边界框回归使用的是SmoothL1Loss
         loss_dir=dict(
-            type='mmdet.CrossEntropyLoss', use_sigmoid=False,
+            type='mmdet.CrossEntropyLoss', use_sigmoid=False,  #角度二分类使用的是CrossEntropyLoss
             loss_weight=0.2)),
     # model training and testing settings
     train_cfg=dict(
         assigner=[
+            # 为不同类别的目标分配不同的IoU阈值
             dict(  # for Pedestrian
                 type='Max3DIoUAssigner',
                 iou_calculator=dict(type='mmdet3d.BboxOverlapsNearest3D'),
@@ -89,6 +96,7 @@ model = dict(
         pos_weight=-1,
         debug=False),
     test_cfg=dict(
+        # nms预测框的后处理
         use_rotate_nms=True,
         nms_across_levels=False,
         nms_thr=0.01,
