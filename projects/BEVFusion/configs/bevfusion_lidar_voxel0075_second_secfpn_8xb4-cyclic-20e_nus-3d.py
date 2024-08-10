@@ -7,8 +7,8 @@ custom_imports = dict(
 # Usually voxel size is changed consistently with the point cloud range
 # If point cloud range is modified, do remember to change all related
 # keys in the config.
-voxel_size = [0.075, 0.075, 0.2]
-point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
+voxel_size = [0.075, 0.075, 0.2]   #体素大小
+point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]  #点云范围
 class_names = [
     'car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier',
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
@@ -40,9 +40,10 @@ input_modality = dict(use_lidar=True, use_camera=False)
 #         's3://openmmlab/datasets/detection3d/nuscenes/'
 #     }))
 backend_args = None
-
+#模型设置
 model = dict(
     type='BEVFusion',
+    #数据处理部分
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
         pad_size_divisor=32,
@@ -63,6 +64,7 @@ model = dict(
                                                                       128)),
         encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, (1, 1, 0)), (0, 0)),
         block_type='basicblock'),
+    #骨干网络
     pts_backbone=dict(
         type='SECOND',
         in_channels=256,
@@ -71,6 +73,7 @@ model = dict(
         layer_strides=[1, 2],
         norm_cfg=dict(type='BN', eps=0.001, momentum=0.01),
         conv_cfg=dict(type='Conv2d', bias=False)),
+    #neck网络
     pts_neck=dict(
         type='SECONDFPN',
         in_channels=[128, 256],
@@ -79,6 +82,7 @@ model = dict(
         norm_cfg=dict(type='BN', eps=0.001, momentum=0.01),
         upsample_cfg=dict(type='deconv', bias=False),
         use_conv_for_no_stride=True),
+    #检测头
     bbox_head=dict(
         type='TransFusionHead',
         num_proposals=200,
@@ -187,7 +191,9 @@ db_sampler = dict(
         use_dim=[0, 1, 2, 3, 4],
         backend_args=backend_args))
 
+#训练流水线
 train_pipeline = [
+    #加载雷达点云数据
     dict(
         type='LoadPointsFromFile',
         coord_type='LIDAR',
@@ -208,12 +214,14 @@ train_pipeline = [
         with_label_3d=True,
         with_attr_label=False),
     dict(type='ObjectSample', db_sampler=db_sampler),
+    #旋转
     dict(
         type='GlobalRotScaleTrans',
         scale_ratio_range=[0.9, 1.1],
         rot_range=[-0.78539816, 0.78539816],
         translation_std=0.5),
     dict(type='BEVFusionRandomFlip3D'),
+    #过滤范围之外的点
     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(
@@ -267,7 +275,7 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=4,
+    batch_size=8,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
