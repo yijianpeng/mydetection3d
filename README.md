@@ -1,6 +1,24 @@
-git 代码提交
+## git 代码提交
 
+### git查看哪些内容是变更的
+outputs的内容默认不添加
+```bash
+git status
+```
 
+### git添加变更的文件
+
+```bash
+git add 文件名
+```
+### git添加评论
+```bash
+git commit -m "Added a new folder and files to the main branch"
+```
+### git提交代码到远程仓库
+```bash
+git push -u origin main
+```
 
 <div align="center">
   <img src="resources/mmdet3d-logo.png" width="600"/>

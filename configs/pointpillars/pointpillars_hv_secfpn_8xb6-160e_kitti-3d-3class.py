@@ -5,7 +5,7 @@ _base_ = [
 ]
 
 point_cloud_range = [0, -39.68, -3, 69.12, 39.68, 1] #点云范围
-# dataset settings
+# dataset settings数据集设置
 data_root = 'data/kitti/'
 class_names = ['Pedestrian', 'Cyclist', 'Car']
 metainfo = dict(classes=class_names)
